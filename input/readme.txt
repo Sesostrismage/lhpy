@@ -1,0 +1,1 @@
+This folder is where OpenCollective finance exports should be placed.
