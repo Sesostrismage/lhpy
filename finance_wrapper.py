@@ -1,18 +1,36 @@
+import datetime
+import os
 import pandas as pd
 
 from pathlib import Path
 
 
 class FinanceWrapper:
-    def __init__(self, input_path):
-        self.input_path = Path(input_path)
+    def __init__(self, input_folder, target_year):
+        self.input_folder = Path(input_folder)
 
-        if self.input_path.exists() and self.input_path.suffix == ".csv":
-            self.data = pd.read_csv(self.input_path, index_col="shortId")
-        else:
-            raise FileNotFoundError(
-                f"File {self.input_path} does not exist or is not a CSV."
-            )
+        # Parse all CSV file names in the 'input' folder
+        latest_file = None
+        latest_date = None
+
+        for file_name in os.listdir(input_folder):
+            if file_name.endswith(".csv"):
+                try:
+                    # Extract the last 10 characters (excluding the extension) and parse as a date
+                    date_str = file_name[-14:-4]  # Assuming format is YYYY-MM-DD.csv
+                    file_date = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+
+                    # Check if the file date is in the target year and is the latest
+                    if file_date.year == target_year:
+                        if latest_date is None or file_date > latest_date:
+                            latest_date = file_date
+                            latest_file = file_name
+                except ValueError:
+                    # Skip files with invalid date formats
+                    continue
+
+        self.input_path = self.input_folder / latest_file
+        self.data = pd.read_csv(self.input_path, index_col="shortId")
 
     def get_account_slug_dict(self):
         """
@@ -39,5 +57,6 @@ class FinanceWrapper:
 
         debits = account_data[account_data["amount"] < 0]["amount"].sum()
         credits = account_data[account_data["amount"] > 0]["amount"].sum()
+        difference = credits + debits
 
-        return {"debits": debits, "credits": credits}
+        return {"debits": debits, "credits": credits, "difference": difference}
