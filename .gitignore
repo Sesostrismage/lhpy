@@ -1,1 +1,6 @@
+# Python build and distribution files
+__pycache__/
+*.py[cod]
+
+# Data files
 input/*.csv
